@@ -64,6 +64,7 @@ Vagrantfile
 
 npm-debug.log
 node_modules
+django-moderation
 
 # PyCharm
 # http://www.jetbrains.com/pycharm/webhelp/project.html

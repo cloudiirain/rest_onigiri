@@ -1,33 +1,12 @@
 from django.db import models
+from moderation.db import ModeratedModel
 
-        
-class Person(models.Model):
-    """
-    Model representing people contributing to a novel (e.g. author, illustrator, editor)
-    """
-    pass
-
-class Tag(models.Model):
-    """
-    Model representing category tags that can be associated with series
-    """
-    pass
-
-class SeriesTitle(models.Model):
-    """
-    Model representing the titles and aliases of any series
-    """
-    title = models.CharField(max_length=100, default="", verbose_name="Series Title")
-
-class Series(models.Model):
+class Series(ModeratedModel):
     """
     Series: Model representing a collection of volumes or books
     """
-    title = models.CharField(max_length=100, default="", verbose_name="Series Title")
-    contributors = models.ManyToManyField(Person, blank=True)
-    tags = models.ManyToManyField(Tag, blank=True)
+    title = models.CharField(max_length=100, default="")
     synopsis = models.TextField(blank=True, default="")
-    created = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
         return self.title
@@ -35,12 +14,13 @@ class Series(models.Model):
     class Meta:
         ordering = ['title',]
         
-        
+"""
+class RecentActivity(models.Model):
+    # Use this class to track who changed each item of content and when
+    # On save, track all relevant information
+
 class Volume(models.Model):
-    """
-    Volume: Model representing physical published light novels
-    Every volume must belong to a series.
-    """
+   
     title = models.CharField(max_length=100, default="")
     series = models.ForeignKey(Series, null=True)
     order = models.IntegerField(null=True)
@@ -66,8 +46,4 @@ class Chapter(models.Model):
 
     class Meta:
         ordering = ['volume', 'order']
-        
-
-
-class Contributor(models.Model):
-    pass
+"""
