@@ -1,18 +1,21 @@
 *.pyc
 *~
 db.db
+manage.py
+testsite
 media
 env
-venv
 MANIFEST
 dist
 dev
 .SyncID
 .SyncIgnore
-Thumbs.db
+
 *.py[cod]
+
 # C extensions
 *.so
+
 # Packages
 *.egg
 *.egg-info
@@ -28,18 +31,23 @@ develop-eggs
 lib
 lib64
 __pycache__
+
 # Installer logs
 pip-log.txt
+
 # Unit test / coverage reports
 .coverage
 .tox
 nosetests.xml
+
 # Translations
 *.mo
+
 # Mr Developer
 .mr.developer.cfg
 .project
 .pydevproject
+
 lib-cov
 *.seed
 *.log
@@ -48,18 +56,16 @@ lib-cov
 *.out
 *.pid
 *.gz
+
 pids
 logs
 results
 Vagrantfile
-.vagrant
+
 npm-debug.log
 node_modules
+
 # PyCharm
 # http://www.jetbrains.com/pycharm/webhelp/project.html
 .idea
 .iml
-*.db
-dev/
-static/bower_components/
-*/migrations/*
