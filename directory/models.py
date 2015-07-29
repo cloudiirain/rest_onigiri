@@ -23,7 +23,7 @@ class Series(models.Model):
     """
     Series: Model representing a collection of volumes or books
     """
-    title = models.ManyToManyField(SeriesTitle, blank=True)
+    title = models.CharField(max_length=100, default="", verbose_name="Series Title")
     contributors = models.ManyToManyField(Person, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     synopsis = models.TextField(blank=True, default="")
@@ -50,7 +50,7 @@ class Volume(models.Model):
         return str(self.series) + ": " + self.title
 
     class Meta:
-        unique_together = ('series', 'number')
+        unique_together = ('series', 'order')
         ordering = ['series', 'order']
 
 class Chapter(models.Model):
@@ -65,7 +65,7 @@ class Chapter(models.Model):
         return str(self.volume) + " " + self.title
 
     class Meta:
-        ordering = ['volume', 'number']
+        ordering = ['volume', 'order']
         
 
 
