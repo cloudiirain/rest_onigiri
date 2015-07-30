@@ -4,4 +4,4 @@ from directory.models import Series, Volume, Chapter
 class SeriesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Series
-        fields = ('id', 'title',)
+        fields = ('id', 'name', 'synopsis')

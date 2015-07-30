@@ -1,4 +1,4 @@
-*.pyc
+dj d*.pyc
 *~
 db.db
 manage.py
@@ -10,6 +10,7 @@ dist
 dev
 .SyncID
 .SyncIgnore
+*.sqlite3
 
 *.py[cod]
 

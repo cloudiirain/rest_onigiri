@@ -1,12 +1,65 @@
 from django.db import models
 from moderation.db import ModeratedModel
 
+SERIES_CONTRIBUTORS = [ ("Author", 1),
+                        ("Illustrator", 2),
+                        ("Publisher", 3),
+                        ]
+
+class Tag(models.Model):
+    '''
+    Represents a category (e.g. Action, Romance, Shounen) descriptive of light novel series
+    '''
+    name = models.CharField(max_length=20, unique=True, default="")
+
+    def __unicode__(self):
+        return self.name
+
+class SeriesContributor(ModeratedModel):
+    '''
+    Represents an author, illustrator, editor, publisher, etc of a light novel
+    For people, use Lastname, Firstname format. Comma is required.
+    '''
+    name = models.CharField(max_length=100, default="")
+    role = models.CharField(choices=SERIES_CONTRIBUTORS, default='Author', max_length=100)
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        unique_together = ('name', 'role')
+        ordering = ['name']
+
 class Series(ModeratedModel):
     '''
     Represents a cohesive collection of books or volumes.
     '''
     name = models.CharField(max_length=100, default="")
+    sort_key = models.CharField(max_length=100, default="", blank=True)
+    contributors = models.ManyToManyField(SeriesContributor)
+    tags = models.ManyToManyField(Tag)
     synopsis = models.TextField(blank=True, default="")
+
+    def __unicode__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        '''
+        If no sort key is provided, use the series name as the sort key
+        If no SeriesAlias exists for the saved title, add it to SeriesAlias
+        '''
+        if self.sort_key == "":
+            self.sort_key = self.name
+        if len(SeriesAlias.objects.filter(name=self.name)) == 0:
+            SeriesAlias.objects.create(name=self.name, series=self.pk)
+        super(Series, self).save(*args, **kwargs)
+
+class SeriesAlias(models.Model):
+    '''
+    Represents aliases for a Series name (e.g. OreShura)
+    '''
+    name = models.CharField(max_length=100, unique=True, default="")
+    series = models.ForeignKey(Series, null=True)
 
     def __unicode__(self):
         return self.name
