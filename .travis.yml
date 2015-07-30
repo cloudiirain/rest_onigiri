@@ -8,7 +8,9 @@ install:
   - pip install -r requirements.txt
   - pip install coveralls
   - git clone https://github.com/dominno/django-moderation.git 
-  - python django-moderation/setup.py install
+  - cd django-moderation
+  - python setup.py install
+  - cd ..
 script:
   - python manage.py makemigrations
   - python manage.py migrate
