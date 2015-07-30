@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.template.defaultfilters import slugify
 from moderation.db import ModeratedModel
 
 SERIES_CONTRIBUTORS = [ ("Author", 1),
@@ -33,11 +35,13 @@ class SeriesContributor(ModeratedModel):
 class Series(ModeratedModel):
     '''
     Represents a cohesive collection of books or volumes.
+    note: name is the default name out of all the aliases
     '''
     name = models.CharField(max_length=100, default="")
     sort_key = models.CharField(max_length=100, default="", blank=True)
     contributors = models.ManyToManyField(SeriesContributor)
     tags = models.ManyToManyField(Tag)
+    hitcount = models.PositiveIntegerField(default=0)
     synopsis = models.TextField(blank=True, default="")
 
     def __unicode__(self):
@@ -58,11 +62,29 @@ class SeriesAlias(models.Model):
     '''
     Represents aliases for a Series name (e.g. OreShura)
     '''
-    name = models.CharField(max_length=100, unique=True, default="")
+    name = models.CharField(max_length=100, default="")
+    slug = models.SlugField(max_length=100, unique=True, default="")
     series = models.ForeignKey(Series, null=True)
 
     def __unicode__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        '''
+        Slugify the alias on every save.
+        '''
+        self.slug = slugify(self.name)
+        super(SeriesAlias, self).save(*args, **kwargs)
+
+class SeriesRating(models.Model):
+    '''
+    Allows registered users to vote for each series once
+    '''
+    series = models.ForeignKey(Series, null=True)
+    user = models.ForeignKey(User, null=True)
+    score = models.PositiveIntegerField(null=True)
+
+    # Need a model manager to aggregate and calculate scores
 
 class Volume(ModeratedModel):
     '''
