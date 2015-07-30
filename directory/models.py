@@ -2,9 +2,9 @@ from django.db import models
 from moderation.db import ModeratedModel
 
 class Series(ModeratedModel):
-    """
-    Series: Model representing a collection of volumes or books
-    """
+    '''
+    Represents a cohesive collection of books or volumes.
+    '''
     name = models.CharField(max_length=100, default="")
     synopsis = models.TextField(blank=True, default="")
 
@@ -12,6 +12,9 @@ class Series(ModeratedModel):
         return self.name
 
 class Volume(ModeratedModel):
+    '''
+    Represents a physical book, belonging to a series of light novels
+    '''
     name = models.CharField(max_length=100, default="")
     series = models.ForeignKey(Series, null=True)
     order = models.IntegerField(null=True)
@@ -25,6 +28,9 @@ class Volume(ModeratedModel):
         ordering = ['series', 'order']
 
 class Chapter(ModeratedModel):
+    '''
+    Represents a translation of a portion of a given physical book or volume
+    '''
     name = models.CharField(max_length=200, default="")
     volume = models.ForeignKey(Volume, null=True)
     translator = models.CharField(max_length=50, default="", blank=True)
