@@ -3,10 +3,12 @@ from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 from moderation.db import ModeratedModel
 
-SERIES_CONTRIBUTORS = [ ("Author", 1),
-                        ("Illustrator", 2),
-                        ("Publisher", 3),
-                        ]
+CREATORS = [("Author", 1),
+            ("Illustrator", 2),
+            ("Publisher", 3),]
+
+CONTRIBUTORS = [("Translator", 1),
+                ("Editor", 2),]
 
 class Tag(models.Model):
     '''
@@ -17,13 +19,13 @@ class Tag(models.Model):
     def __unicode__(self):
         return self.name
 
-class SeriesContributor(ModeratedModel):
+class Creator(ModeratedModel):
     '''
     Represents an author, illustrator, editor, publisher, etc of a light novel
     For people, use Lastname, Firstname format. Comma is required.
     '''
     name = models.CharField(max_length=100, default="")
-    role = models.CharField(choices=SERIES_CONTRIBUTORS, default='Author', max_length=100)
+    role = models.CharField(choices=CREATORS, default='Author', max_length=100)
 
     def __unicode__(self):
         return self.name
@@ -32,6 +34,23 @@ class SeriesContributor(ModeratedModel):
         unique_together = ('name', 'role')
         ordering = ['name']
 
+class Contributor(ModeratedModel):
+    '''
+    Represents a fan translator, editor, proofreader, etc.
+    Can be associated with User accounts
+    '''
+    name = models.CharField(max_length=100, unique=True, default="")
+    role = models.CharField(choices=CREATORS, default='Translator', max_length=100)
+    user = models.OneToOneField(User, blank=True, null=True)
+    
+    def __unicode__(self):
+        return self.name
+    
+    def save(self, *args, **kwargs):
+        if self.user:
+            self.name = self.user.username
+        super(Contributor, self).save(*args, **kwargs)
+    
 class Series(ModeratedModel):
     '''
     Represents a cohesive collection of books or volumes.
@@ -39,7 +58,7 @@ class Series(ModeratedModel):
     '''
     name = models.CharField(max_length=100, default="")
     sort_key = models.CharField(max_length=100, default="", blank=True)
-    contributors = models.ManyToManyField(SeriesContributor)
+    contributors = models.ManyToManyField(Creator)
     tags = models.ManyToManyField(Tag)
     hitcount = models.PositiveIntegerField(default=0)
     synopsis = models.TextField(blank=True, default="")
@@ -54,11 +73,12 @@ class Series(ModeratedModel):
         '''
         if self.sort_key == "":
             self.sort_key = self.name
-        if len(SeriesAlias.objects.filter(name=self.name)) == 0:
-            SeriesAlias.objects.create(name=self.name, series=self.pk)
         super(Series, self).save(*args, **kwargs)
+        if len(SeriesAlias.unmoderated_objects.filter(name=self.name)) == 0:
+            SeriesAlias.objects.create(name=self.name, series=self)
+            # Need to automoderate this!!!!
 
-class SeriesAlias(models.Model):
+class SeriesAlias(ModeratedModel):
     '''
     Represents aliases for a Series name (e.g. OreShura)
     '''
@@ -104,7 +124,7 @@ class Volume(ModeratedModel):
 
 class Chapter(ModeratedModel):
     '''
-    Represents a translation of a portion of a given physical book or volume
+    Represents a portion of a given physical book or volume
     '''
     name = models.CharField(max_length=200, default="")
     volume = models.ForeignKey(Volume, null=True)
@@ -118,11 +138,10 @@ class Chapter(ModeratedModel):
 
     class Meta:
         ordering = ['volume', 'order']
-        
-"""
-class RecentActivity(models.Model):
-    # Use this class to track who changed each item of content and when
-    # On save, track all relevant information
 
-
-"""
+class Translation(ModeratedModel):
+    '''
+    Represents a translation made my a translator
+    '''
+    pass
+    
