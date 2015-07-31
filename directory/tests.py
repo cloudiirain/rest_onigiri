@@ -1,8 +1,33 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
-from directory.models import Series, Volume, Chapter, SeriesContributor, SeriesAlias
+from directory.models import Tag, Creator, Contributor, Series, SeriesAlias, SeriesRating, Volume, Chapter, Translation
+
+def generic_init():
+    '''
+    Basic function to initialize commonly used models
+    '''
+    user = User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')
+    tag = Tag.objects.create(name='Action')
+    creator = Creator.objects.create(name='Yuuji, Yuuji')
+    contributor = Contributor.objects.create(name='cloudii')
+    series = Series.objects.create(name='Oreshura', synopsis='Masuzu does cool things.')
+    alias = SeriesAlias.objects.create(name='Ore no kanojo', series=series)
+    volume = Volume.objects.create(name='Volume 1', series=series, order=1)
+    chapter = Chapter.objects.create(name='Chapter 1', volume=volume, order=1)
+    translation = Translation.objects.create(chapter=chapter, translator=contributor)
+
+    creator.moderated_object.approve(moderated_by=user, reason='test')
+    contributor.moderated_object.approve(moderated_by=user, reason='test')
+    series.moderated_object.approve(moderated_by=user, reason='test')
+    alias.moderated_object.approve(moderated_by=user, reason='test')
+    volume.moderated_object.approve(moderated_by=user, reason='test')
+    chapter.moderated_object.approve(moderated_by=user, reason='test')
+    translation.moderated_object.approve(moderated_by=user, reason='test')
 
 class ModerationTestCase(TestCase):
+    '''
+    Test django-moderation functionality
+    '''
     def setUp(self):
         Series.objects.create(name="Oreshura", synopsis="Masuzu does cool things.")
         User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')
@@ -22,20 +47,40 @@ class ModerationTestCase(TestCase):
         approved = Series.objects.get(name="Oreshura")
         self.assertEqual(approved.synopsis, "Masuzu does cool things.")
 
-class SeriesVolumeChapterTestCase(TestCase):
+class UnicodeTestCase(TestCase):
+    '''
+    Test the unicode method in most models
+    '''
     def setUp(self):
-        series = Series.objects.create(name="Oreshura", synopsis="Masuzu does cool things.")
-        volume = Volume.objects.create(name="Volume 1", series=series, order=1)
-        chapter = Chapter.objects.create(name="Chapter 1", volume=volume, order=1)
-        user = User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')
-        
-        series.moderated_object.approve(moderated_by=user, reason="test")
-        volume.moderated_object.approve(moderated_by=user, reason="test")
-        chapter.moderated_object.approve(moderated_by=user, reason="test")
+        generic_init()
+
+    def test_tag_unicode(self):
+        self.assertEqual(Tag.objects.get(name='Action').__unicode__(), u'Action')
+
+    def test_creator_unicode(self):
+        self.assertEqual(Creator.objects.get(name='Yuuji, Yuuji').__unicode__(), u'Yuuji, Yuuji')
+
+    def test_contributor_unicode(self):
+        self.assertEqual(Contributor.objects.get(name='cloudii').__unicode__(), u'cloudii')
 
     def test_series_unicode(self):
-        oreshura = Series.objects.get(name="Oreshura")
-        self.assertEqual(oreshura.__unicode__(), u'Oreshura')
+        self.assertEqual(Series.objects.get(name='Oreshura').__unicode__(), u'Oreshura')
+
+    def test_seriesalias_unicode(self):
+        self.assertEqual(SeriesAlias.objects.get(name='Ore no kanojo').__unicode__(), u'Ore no kanojo')
+
+    def test_volume_unicode(self):
+        self.assertEqual(Volume.objects.get(pk=1).__unicode__(), u'Oreshura: Volume 1')
+
+    def test_chapter_unicode(self):
+        self.assertEqual(Chapter.objects.get(pk=1).__unicode__(), u'Oreshura: Volume 1 Chapter 1')
+
+    def test_translation_unicode(self):
+        self.assertEqual(Translation.objects.get(pk=1).__unicode__(), u'Oreshura: Volume 1 Chapter 1 (cloudii)')
+
+class SeriesVolumeChapterTestCase(TestCase):
+    def setUp(self):
+        generic_init()
 
     def test_series_sortkey_save(self):
         oreshura = Series.objects.get(name="Oreshura")
@@ -45,24 +90,3 @@ class SeriesVolumeChapterTestCase(TestCase):
         index.sort_key = ""
         index.save()
         self.assertEqual(index.sort_key, u'A Certain Magical Index')
-
-    def test_series_alias_save(self):
-        oreshura = SeriesAlias.objects.get(name="Oreshura")
-
-    def test_volume_unicode(self):
-        oreshura = Volume.objects.get(pk=1)
-        self.assertEqual(oreshura.__unicode__(), u'Oreshura: Volume 1')
-        
-    def test_chapter_unicode(self):
-        oreshura = Chapter.objects.get(pk=1)
-        self.assertEqual(oreshura.__unicode__(), u'Oreshura: Volume 1 Chapter 1')
-
-class SeriesContributorTestCase(TestCase):
-    def setUp(self):
-        author = SeriesContributor.objects.create(name="Kazuto, Kirito", role="author")
-        user = User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')
-        author.moderated_object.approve(moderated_by=user, reason="test")
-
-    def test_SeriesContributor_unicode(self):
-        author = SeriesContributor.objects.get(name="Kazuto, Kirito")
-        self.assertEqual(author.__unicode__(), u'Kazuto, Kirito')

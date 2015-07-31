@@ -2,11 +2,14 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 from moderation.db import ModeratedModel
+from moderation import moderation
 
-SERIES_CONTRIBUTORS = [ ("Author", 1),
+from directory.moderator import SeriesModerator
+
+CREATORS = ( ("Author", 1),
                         ("Illustrator", 2),
                         ("Publisher", 3),
-                        ]
+                        )
 
 class Tag(models.Model):
     '''
@@ -17,13 +20,13 @@ class Tag(models.Model):
     def __unicode__(self):
         return self.name
 
-class SeriesContributor(ModeratedModel):
+class Creator(models.Model):
     '''
     Represents an author, illustrator, editor, publisher, etc of a light novel
     For people, use Lastname, Firstname format. Comma is required.
     '''
     name = models.CharField(max_length=100, default="")
-    role = models.CharField(choices=SERIES_CONTRIBUTORS, default='Author', max_length=100)
+    role = models.CharField(choices=CREATORS, default='Author', max_length=100)
 
     def __unicode__(self):
         return self.name
@@ -31,18 +34,32 @@ class SeriesContributor(ModeratedModel):
     class Meta:
         unique_together = ('name', 'role')
         ordering = ['name']
+moderation.register(Creator)
 
-class Series(ModeratedModel):
+class Contributor(models.Model):
+    '''
+    Represents a fan translators, editor, proofreader of a light novel translation
+    '''
+    name = models.CharField(max_length=100, unique=True, default="")
+    #role
+
+    def __unicode__(self):
+        return self.name
+
+moderation.register(Contributor)
+
+class Series(models.Model):
     '''
     Represents a cohesive collection of books or volumes.
     note: name is the default name out of all the aliases
     '''
     name = models.CharField(max_length=100, default="")
     sort_key = models.CharField(max_length=100, default="", blank=True)
-    contributors = models.ManyToManyField(SeriesContributor)
+    contributors = models.ManyToManyField(Creator)
     tags = models.ManyToManyField(Tag)
     hitcount = models.PositiveIntegerField(default=0)
     synopsis = models.TextField(blank=True, default="")
+    image = models.URLField(null=True)
 
     def __unicode__(self):
         return self.name
@@ -50,13 +67,11 @@ class Series(ModeratedModel):
     def save(self, *args, **kwargs):
         '''
         If no sort key is provided, use the series name as the sort key
-        If no SeriesAlias exists for the saved title, add it to SeriesAlias
         '''
         if self.sort_key == "":
             self.sort_key = self.name
-        if len(SeriesAlias.objects.filter(name=self.name)) == 0:
-            SeriesAlias.objects.create(name=self.name, series=self.pk)
         super(Series, self).save(*args, **kwargs)
+moderation.register(Series)
 
 class SeriesAlias(models.Model):
     '''
@@ -75,6 +90,7 @@ class SeriesAlias(models.Model):
         '''
         self.slug = slugify(self.name)
         super(SeriesAlias, self).save(*args, **kwargs)
+moderation.register(SeriesAlias)
 
 class SeriesRating(models.Model):
     '''
@@ -86,14 +102,14 @@ class SeriesRating(models.Model):
 
     # Need a model manager to aggregate and calculate scores
 
-class Volume(ModeratedModel):
+class Volume(models.Model):
     '''
     Represents a physical book, belonging to a series of light novels
     '''
     name = models.CharField(max_length=100, default="")
     series = models.ForeignKey(Series, null=True)
     order = models.IntegerField(null=True)
-    created = models.DateTimeField(auto_now_add=True)
+    image = models.URLField(null=True)
 
     def __unicode__(self):
         return str(self.series) + ": " + self.name
@@ -101,28 +117,33 @@ class Volume(ModeratedModel):
     class Meta:
         unique_together = ('series', 'order')
         ordering = ['series', 'order']
+moderation.register(Volume)
 
-class Chapter(ModeratedModel):
+class Chapter(models.Model):
     '''
-    Represents a translation of a portion of a given physical book or volume
+    Represents a portion of a given physical book or volume
     '''
     name = models.CharField(max_length=200, default="")
     volume = models.ForeignKey(Volume, null=True)
-    translator = models.CharField(max_length=50, default="", blank=True)
-    url = models.URLField(null=True)
     order = models.IntegerField(null=True)
-    created = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
         return str(self.volume) + " " + self.name
 
     class Meta:
+        unique_together = ('volume', 'order')
         ordering = ['volume', 'order']
-        
-"""
-class RecentActivity(models.Model):
-    # Use this class to track who changed each item of content and when
-    # On save, track all relevant information
+moderation.register(Chapter)
 
+class Translation(models.Model):
+    '''
+    Represents a fan translation of a chapter
+    '''
+    url = models.URLField(null=True)
+    translator = models.ForeignKey(Contributor, null=True)
+    chapter = models.ForeignKey(Chapter, null=True)
 
-"""
+    def __unicode__(self):
+        return str(self.chapter) + " (" + str(self.translator) + ")"
+
+moderation.register(Translation)
