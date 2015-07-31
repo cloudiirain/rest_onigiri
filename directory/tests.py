@@ -90,3 +90,6 @@ class SeriesVolumeChapterTestCase(TestCase):
         index.sort_key = ""
         index.save()
         self.assertEqual(index.sort_key, u'A Certain Magical Index')
+
+class SerializersTestCase(TestCase):
+    pass

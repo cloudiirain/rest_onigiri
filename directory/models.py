@@ -1,10 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
-from moderation.db import ModeratedModel
 from moderation import moderation
-
-from directory.moderator import SeriesModerator
+from directory.moderator import *
 
 CREATORS = ( ("Author", 1),
                         ("Illustrator", 2),
@@ -71,7 +69,7 @@ class Series(models.Model):
         if self.sort_key == "":
             self.sort_key = self.name
         super(Series, self).save(*args, **kwargs)
-moderation.register(Series)
+moderation.register(Series, SeriesModerator)
 
 class SeriesAlias(models.Model):
     '''
